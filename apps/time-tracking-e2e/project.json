@@ -1,0 +1,30 @@
+{
+  "name": "time-tracking-e2e",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/time-tracking-e2e/src",
+  "targets": {
+    "e2e": {
+      "executor": "@nx/cypress:cypress",
+      "options": {
+        "cypressConfig": "apps/time-tracking-e2e/cypress.config.ts",
+        "testingType": "e2e",
+        "devServerTarget": "time-tracking:serve"
+      },
+      "configurations": {
+        "production": {
+          "devServerTarget": "time-tracking:serve:production"
+        },
+        "ci": {
+          "devServerTarget": "time-tracking:serve-static"
+        }
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"]
+    }
+  },
+  "implicitDependencies": ["time-tracking"],
+  "tags": []
+}

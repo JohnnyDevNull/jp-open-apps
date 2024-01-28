@@ -4,6 +4,6 @@ module.exports = {
     files => `npx nx format:write --files=${files.join(',')}`,
   ],
   '{apps,libs,tools}/**/*.{css,scss}': files => {
-    return `npx stylelint --fix --files=${files.join(',')}`;
+    return `npx stylelint --fix`;
   },
 };
