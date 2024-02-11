@@ -55,6 +55,7 @@
     "stylelint": "16.2.0",
     "stylelint-config-prettier": "9.0.5",
     "stylelint-config-standard": "36.0.0",
+    "stylelint-scss": "6.1.0",
     "typescript": "~5.2.2",
     "vite": "^5.0.0",
     "vitest": "~0.34.6"
