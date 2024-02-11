@@ -52,7 +52,7 @@
     "nx": "17.2.8",
     "prettier": "3.2.4",
     "sass": "^1.55.0",
-    "stylelint": "16.2.0",
+    "stylelint": "16.2.1",
     "stylelint-config-prettier": "9.0.5",
     "stylelint-config-standard": "36.0.0",
     "stylelint-scss": "6.1.0",
