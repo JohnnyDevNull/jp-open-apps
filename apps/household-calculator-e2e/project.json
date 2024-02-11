@@ -1,0 +1,30 @@
+{
+  "name": "household-calculator-e2e",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/household-calculator-e2e/src",
+  "targets": {
+    "e2e": {
+      "executor": "@nx/cypress:cypress",
+      "options": {
+        "cypressConfig": "apps/household-calculator-e2e/cypress.config.ts",
+        "testingType": "e2e",
+        "devServerTarget": "household-calculator:serve"
+      },
+      "configurations": {
+        "production": {
+          "devServerTarget": "household-calculator:serve:production"
+        },
+        "ci": {
+          "devServerTarget": "household-calculator:serve-static"
+        }
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"]
+    }
+  },
+  "implicitDependencies": ["household-calculator"],
+  "tags": []
+}
