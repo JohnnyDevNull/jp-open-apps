@@ -1,13 +1,14 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import styles from './app.module.scss';
 
-import NxWelcome from './nx-welcome';
+import { CssBaseline } from '@mui/material';
 
 export function App() {
   return (
-    <div>
-      <NxWelcome title="household-calculator" />
-    </div>
+    <>
+      <CssBaseline />
+      <div>household-calculator works!</div>
+    </>
   );
 }
 
