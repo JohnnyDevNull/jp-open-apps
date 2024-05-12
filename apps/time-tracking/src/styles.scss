@@ -1,4 +1,53 @@
+@use 'sass:map';
 @import '../../../node_modules/@fontsource/roboto/300.css';
 @import '../../../node_modules/@fontsource/roboto/400.css';
 @import '../../../node_modules/@fontsource/roboto/500.css';
 @import '../../../node_modules/@fontsource/roboto/700.css';
+
+$jpoa-colors: (
+  'background': #efefef,
+  'background-2': #fff,
+);
+
+html,
+body {
+  height: 100%;
+}
+
+#root {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background-color: map.get($jpoa-colors, 'background');
+}
+
+.jpoa-app {
+  display: flex;
+  flex-direction: column;
+  background-color: map.get($jpoa-colors, 'background-2');
+  padding: 1.25rem;
+  border-radius: 0.625rem;
+  box-shadow: 0 0 0.625rem rgb(0 0 0 / 10%);
+
+  .header-wrapper,
+  .content-wrapper {
+    margin-bottom: 0.625rem;
+  }
+
+  .header-wrapper {
+    border-bottom: 1px solid map.get($jpoa-colors, 'background');
+    padding-bottom: 0.625rem;
+  }
+
+  .footer-wrapper {
+    border-top: 1px solid map.get($jpoa-colors, 'background');
+    padding-top: 0.625rem;
+
+    .copy {
+      text-align: center;
+      font-size: 0.8rem;
+    }
+  }
+}
