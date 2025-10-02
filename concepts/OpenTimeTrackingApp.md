@@ -36,8 +36,8 @@ An ultra-focused personal time tracking app that excels at one thing: recording 
 - Max per user: 1000 categories, 1000 projects, 1000 tags.
 - Max tags per TimeEntry: 10.
 - Delete policy:
-  - Category/Project deletion requires reassignment wizard; otherwise allow archiving (archived=true).
-  - Tag rename allowed; tag delete requires reassignment or soft-archive.
+  - Category/Project deletion requires reassignment wizard; **after reassignment the entity is fully deleted** (not archived). Archiving remains available as a separate, explicit action.
+  - Tag rename allowed; **Tag delete performs a hard delete after an irreversible confirmation** (removes the tag from all entries and deletes the tag entity).
 
 ## Key Flows (MVP)
 - Timer Mode:
@@ -63,7 +63,45 @@ An ultra-focused personal time tracking app that excels at one thing: recording 
 - Search/Filter: By date range, category, project, tag, text-in-note.
 
 ## Non-Functional Requirements
-Open questions / decisions needed:
+
+### Performance
+- Expected max entries per day: 50; max history per user: 100k entries.
+- Target load times: Daily ≤150ms, Weekly/Monthly ≤250ms (after cache).
+- Virtualized lists enabled if >200 visible rows.
+- IndexedDB queries with indices (startAtUtc, endAtUtc, categoryId).
+
+### Accessibility (a11y)
+- Target WCAG 2.1 AA compliance.
+- Full keyboard navigation with defined focus order.
+- Screen reader support with ARIA live regions.
+- Keyboard shortcuts: S (start/stop), P (pause/resume), A (add manual), E (edit).
+
+### Internationalization
+- MVP UI in English; German planned next.
+- Default 24h time format only; **no option to switch**.
+- Default week start: Monday; configurable.
+- Locale-based date/number formats, displayed in user’s timezone.
+
+### Privacy & Security (MVP)
+- Data stored locally in IndexedDB, without encryption-at-rest.
+- No app passcode/lock screen in MVP.
+- Retention: data kept indefinitely until deleted by user.
+
+### Backups
+- Manual CSV export anytime.
+- Optional weekly reminder (“backup now”).
+- No password-protected archives in MVP.
+
+### Telemetry
+- No crash/error reporting in MVP; future: Sentry adapter.
+- No usage analytics in MVP; planned for later.
+
+### Compliance (future backend)
+- GDPR: data export, delete account flow.
+- EU-only data residency for future sync.
+
+---
+
 - Performance targets:
   - Expected max entries per day and total history size (e.g., 50/day, 100k total)?
   - Target load time for day/week/month views and search (e.g., <200ms after data cached)?
@@ -88,42 +126,64 @@ Open questions / decisions needed:
   - Data residency preferences (EU-only) for future sync?
 
 ## CSV Specification
-Open questions / decisions needed:
-- Columns (Export/Import):
-  - id, startAtUtc, endAtUtc, durationSeconds, categoryName, projectName, tagName, note
-  - Include a derived date column (UTC date or user-local date)? Needed for spreadsheets?
-- Formats:
-  - Delimiter (comma), quote char ("), escape ("") — confirm; newline (\n); encoding UTF-8 with header row?
-  - Include BOM for Excel compatibility, or omit?
-- Duplicate detection on import:
-  - Default key: (startAtUtc, endAtUtc, categoryName, projectName, tagName, noteHash) — confirm.
-  - Behavior on duplicates: skip, merge/update, or import duplicate? Default: skip with report — confirm.
-- Quick-create on import:
-  - Auto-create missing Category/Project/Tag using normalization (trim/collapse spaces, case-insensitive uniqueness) — confirm.
-  - What to do if names violate charset/length rules: reject row or auto-sanitize (and how)?
-- Limits & UX:
-  - Max file size and max rows per import (e.g., 5 MB / 50k rows)?
-  - Partial import behavior on errors: stop-all, or continue and produce error report?
-- Rounding in CSV:
-  - Include both raw durationSeconds and an additional roundedDurationSeconds column (based on current settings)? Needed?
+
+### Columns (Export & Import)
+- **Standard:** `id, startAtUtc, endAtUtc, durationSeconds, categoryName, projectName, tagName, note`
+- **Additional:** `dateLocal` (derived from user’s timezone for spreadsheets), `roundedDurationSeconds` (derived by current rounding settings; data remains raw).
+
+### Formats
+- **Delimiter:** `,`
+- **Quote:** `"` with escape `""`
+- **Newline:** `
+`
+- **Encoding:** UTF-8 with header row
+- **BOM:** included (for Excel compatibility)
+
+### Duplicate Detection (Import)
+- **Key:** `(startAtUtc, endAtUtc, categoryName, projectName, tagName, noteHash)`
+- **Default behavior:** **skip with report** (downloadable CSV of skipped/errored rows)
+- **No merge/update** logic in MVP
+
+### Quick-Create on Import
+- Auto-create missing **Category/Project/Tag** with normalization (trim, collapse spaces, case-insensitive uniqueness)
+- Violations of charset/length rules → **reject row**; listed in error report (no auto-sanitize in MVP)
+
+### Limits & UX
+- **Max file size:** 5 MB
+- **Max rows:** 50,000
+- **Partial import:** continue on errors and produce an **error report**; no stop-all behavior
 
 ## Validation Matrix
-Open questions / decisions needed:
-- Name fields (Category/Project/Tag):
-  - Confirm allowed charset: letters, digits, space, dash, underscore; no emojis/specials.
-  - Case-insensitive uniqueness per user; normalize (trim, collapse multiple spaces) on save — confirm.
-  - Behavior on length violations (Category 2–50, Project 2–80, Tag 2–30): block with error vs auto-truncate?
-  - Reserved names (e.g., “Uncategorized”)? Needed?
-- TimeEntry:
-  - Max duration 24h — on violation, block or suggest split?
-  - Overlap validation in UTC across midnight — on violation: block with guidance vs auto-adjust suggestions?
-  - Are entries spanning midnight kept as single entry or auto-split (future option)?
-- Tags:
-  - Max tags per entry: 10 — confirm behavior when limit exceeded in UI/import.
-  - Rename rules: propagate to all entries immediately; any audit trail needed?
-- Deletion/Reassignment:
-  - For Category/Project deletion: must pick target for reassignment; what’s the default target (none vs last used)?
-  - If reassignment cancelled: keep entity archived or leave as-is?
+
+### Name fields (Category/Project/Tag)
+- **Allowed charset:** `[A–Z a–z 0–9 space - _]`.
+- **Normalization:** trim; collapse multiple spaces to one; compare **case-insensitive**.
+- **Uniqueness:** case-insensitive unique per user; on conflict, block with actionable hint.
+- **Lengths:** Category **2–50**, Project **2–80**, Tag **2–30** → violations **block** (no auto-truncate).
+- **Reserved names:** none in MVP (no implicit “Uncategorized”).
+
+### TimeEntry
+- Must satisfy: `startAtUtc < endAtUtc`, `durationSeconds > 0`, **max 24h** → violations **block**.
+- **Overlap validation:** no overlapping entries (checked in UTC, incl. across midnight). On conflict show **Quick Actions**:
+  - “Adjust end to previous start” (auto-fix endAtUtc)
+  - “Open conflicting entry” to edit
+- **Cross-midnight entries:** **Auto-split at midnight** on save/stop into two entries (no setting needed in MVP). Future option to toggle behavior.
+- **>24h spans:** block and offer “Split” dialog across days.
+
+### Tags
+- **Max tags per entry:** 10 → UI blocks adding #11; import marks row as error.
+- **Rename:** propagates immediately to all entries; no audit trail in MVP.
+- **Delete:** **hard delete after irreversible confirmation** → removes tag from all entries and deletes the tag entity (no soft-archive/reassignment).
+
+### Deletion/Reassignment
+- **Category/Project delete:** requires **Reassignment Wizard**; after reassignment, the entity is **fully deleted** (not archived). Separate action allows archiving when desired.
+- **Data integrity on delete:** all affected TimeEntries are updated atomically; failures roll back and show an actionable error.
+
+### Error messaging (UX)
+- Inline, specific, and keyboard-first:
+  - “Category name must be 2–50 chars and use A–Z, 0–9, space, - or _.”
+  - “Entry overlaps with 2025-10-02 08:00–09:30. Click to adjust.”
+- Focus moves to the offending field; **Enter** confirms suggested fix; **Esc** dismisses banners.
 
 ## Settings Defaults
 Open questions / decisions needed:
@@ -146,7 +206,7 @@ Open questions / decisions needed:
   - Exact user message; offer “Adjust end to previous start” quick action, or block only?
   - Should manual entries be auto-snapped to nearest 5 minutes (optional UX) — yes/no?
 - Timer edge cases:
-  - Timer across midnight: keep single entry or suggest split on stop?
+  - Timer across midnight: **auto-split at midnight on stop/save** (creates two entries, before and after 00:00).
   - App/browser closed during active timer: resume from last persisted start or discard?
 - Pause semantics:
   - Represent pauses as internal segments (not stored individually) and compute duration excluding pauses — confirm.
@@ -154,7 +214,7 @@ Open questions / decisions needed:
   - Duplicate rows: default action (skip with report); where to show/download the report?
   - Fuzzy duplicates (same startAtUtc/endAtUtc but different note): treat as new or duplicate?
 - Deletion safety:
-  - Confirm dialogs text; bulk delete allowed? Soft-delete needed or hard delete is fine?
+  - Confirm dialogs text; bulk delete allowed. **No Undo-Toast** — once deleted, data is permanently removed. Hard delete only.
 
 ## UI Flows Overview
 Open questions / decisions needed:
@@ -174,20 +234,47 @@ Open questions / decisions needed:
   - Preview of rounding/timezone effects; import/export placement and confirmations.
 
 ## Milestones & Acceptance Criteria (MVP)
-Open questions / decisions needed:
-- Scope freeze for MVP:
-  - Exact feature checklist to be considered “done” (Timer with Pause, Manual CRUD, Overlap prevention, Manage Data, Settings, CSV Import/Export, Rounding in views/exports) — confirm.
-- Quality gates:
-  - Performance targets for lists/search; acceptable initial load time; minimal offline resilience (local state).
-  - Accessibility baseline (keyboard navigation, labels).
-- Data integrity:
-  - Validation rules fully enforced (charset, lengths, uniqueness, overlaps); reassignment flows implemented.
-- CSV:
-  - Export/import parity; duplicate handling; error reporting format.
-- Acceptance demo:
-  - Which end-to-end scenarios must pass (e.g., create categories, run a timer, edit entry, import CSV with duplicates, export period)?
-- Timeline & priorities:
-  - Desired MVP deadline; must-have vs nice-to-have within MVP.
+
+### Scope Freeze (MVP Features)
+- **Timer with Pause/Resume**, with auto-split across midnight.
+- **Manual CRUD entries** (Create, Edit, Delete) with validation and overlap checking.
+- **Category required**, Project/Tags optional, Notes ≤2000 chars.
+- **Manage Data:** Create, rename, archive or delete Category/Project/Tag (with reassignment wizard for Category/Project; hard delete for Tags).
+- **CSV Import/Export:**
+  - Export includes `dateLocal` and `roundedDurationSeconds`.
+  - Import with duplicate detection (skip + error report), quick-create for missing entities, reject rows with rule violations.
+- **Rounding:** Only for views/exports, never mutates stored data.
+- **Settings:** Timezone, week start, 24h-only, rounding options.
+
+### Quality Gates
+- **Performance:** Today ≤150ms, Week/Month ≤250ms (after cache).
+- **Accessibility:** WCAG 2.1 AA, full keyboard navigation, baseline screenreader support.
+- **Offline resilience:** IndexedDB/LocalStorage only, works without network.
+
+### Data Integrity
+- Validation: start < end, ≤24h, no overlaps, max 10 tags.
+- Delete policies: Category/Project → reassignment wizard + hard delete; Tag → hard delete after confirmation.
+- Data model consistent: entries stored only in UTC, duration computed, raw data never mutated.
+
+### CSV Parity
+- Export/import field parity guaranteed.
+- Duplicates skipped with downloadable CSV report.
+- Errors reported at row-level; import continues.
+
+### Acceptance Demo Scenarios
+- Create categories, start/pause/stop timer (with midnight split).
+- Create manual entry with overlap error + quick action fix.
+- Export CSV with `dateLocal` and `roundedDurationSeconds`.
+- Import CSV with duplicates + error report.
+- Delete Category with reassignment → hard delete.
+- Delete Tag with confirmation → removed everywhere.
+
+### Timeline & Priorities
+- MVP deadline: TBD (depends on team capacity).
+- Must-haves: all above features.
+- Nice-to-haves: backup reminder, archive toggle, multi-language (German).
+
+---
 
 ## Collaboration Notes (Session Summary)
 - Roles:
