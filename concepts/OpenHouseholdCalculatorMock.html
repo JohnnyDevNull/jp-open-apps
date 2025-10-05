@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Open Household Calculators</title>
+  <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mui/material@5.14.18/umd/material-ui.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.22.9/babel.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/@mui/material@5.14.18/dist/css/mui.min.css" rel="stylesheet">
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+  const { useState } = React;
+  const { AppBar, Toolbar, Typography, Button, Container, Grid, TextField, Select, MenuItem, IconButton, List, ListItem, ListItemText, Drawer, Divider, Box, CssBaseline, ThemeProvider, createTheme } = window.MaterialUI;
+
+  const theme = createTheme({
+    palette: {
+      primary: { main: '#1976d2' }, // Blau für Menüs, Toolbars
+      secondary: { main: '#fbc02d' }, // Gelb als Akzentfarbe
+      background: { default: '#ffffff' }, // Weiß als Grundfarbe
+    },
+    components: {
+      MuiButton: {
+        styleOverrides: {
+          root: {
+            textTransform: 'none',
+            borderRadius: '8px',
+          },
+        },
+      },
+    },
+  });
+
+  function App() {
+    const [drawerOpen, setDrawerOpen] = useState(false);
+    const [view, setView] = useState('dashboard'); // dashboard, households, finances, settings
+
+    const toggleDrawer = () => {
+      setDrawerOpen(!drawerOpen);
+    };
+
+    const renderContent = () => {
+      switch (view) {
+        case 'dashboard':
+          return <DashboardView />;
+        case 'households':
+          return <HouseholdsView />;
+        case 'finances':
+          return <FinancesView />;
+        case 'settings':
+          return <SettingsView />;
+        default:
+          return <DashboardView />;
+      }
+    };
+
+    return (
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <AppBar position="static" color="primary">
+          <Toolbar>
+            <IconButton edge="start" color="inherit" onClick={toggleDrawer} aria-label="Menü öffnen">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </IconButton>
+            <Typography variant="h6" className="flex-grow">Open Household Calculators</Typography>
+            <Button color="inherit" onClick={() => setView('settings')}>Einstellungen</Button>
+          </Toolbar>
+        </AppBar>
+        <Drawer anchor="left" open={drawerOpen} onClose={toggleDrawer}>
+          <Box className="w-64 p-4 bg-white">
+            <Typography variant="h6" className="mb-4">Menü</Typography>
+            <Divider />
+            <List>
+              <ListItem button onClick={() => { setView('dashboard'); toggleDrawer(); }}>
+                <ListItemText primary="Dashboard" />
+              </ListItem>
+              <ListItem button onClick={() => { setView('households'); toggleDrawer(); }}>
+                <ListItemText primary="Haushalte" />
+              </ListItem>
+              <ListItem button onClick={() => { setView('finances'); toggleDrawer(); }}>
+                <ListItemText primary="Finanzen" />
+              </ListItem>
+              <ListItem button onClick={() => { setView('settings'); toggleDrawer(); }}>
+                <ListItemText primary="Einstellungen" />
+              </ListItem>
+            </List>
+          </Box>
+        </Drawer>
+        <Container className="mt-4">{renderContent()}</Container>
+      </ThemeProvider>
+    );
+  }
+
+  function DashboardView() {
+    return (
+      <Box>
+        <Typography variant="h5" className="mb-4">Dashboard</Typography>
+        <Grid container spacing={2} className="mb-4">
+          <Grid item xs={12} sm={6}>
+            <Typography variant="h6" className="mb-2">Haushalt hinzufügen</Typography>
+            <TextField
+              label="Haushaltsname"
+              defaultValue=""
+              fullWidth
+              variant="outlined"
+              className="mb-2"
+              aria-label="Haushaltsname eingeben"
+            />
+            <Select fullWidth variant="outlined" defaultValue="house" displayEmpty aria-label="Haushaltstyp auswählen">
+              <MenuItem value="house">Haus</MenuItem>
+              <MenuItem value="apartment">Wohnung</MenuItem>
+            </Select>
+            <Button variant="contained" color="secondary" className="mt-2" aria-label="Haushalt hinzufügen">Hinzufügen</Button>
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <Typography variant="h6" className="mb-2">Person hinzufügen</Typography>
+            <TextField
+              label="Name"
+              defaultValue=""
+              fullWidth
+              variant="outlined"
+              className="mb-2"
+              aria-label="Personenname eingeben"
+            />
+            <Select fullWidth variant="outlined" defaultValue="adult" displayEmpty aria-label="Personentyp auswählen">
+              <MenuItem value="adult">Erwachsener</MenuItem>
+              <MenuItem value="child">Kind</MenuItem>
+            </Select>
+            <Button variant="contained" color="secondary" className="mt-2" aria-label="Person hinzufügen">Hinzufügen</Button>
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <Typography variant="h6" className="mb-2">Tier hinzufügen</Typography>
+            <TextField
+              label="Name"
+              defaultValue=""
+              fullWidth
+              variant="outlined"
+              className="mb-2"
+              aria-label="Tiername eingeben"
+            />
+            <Button variant="contained" color="secondary" className="mt-2" aria-label="Tier hinzufügen">Hinzufügen</Button>
+          </Grid>
+        </Grid>
+      </Box>
+    );
+  }
+
+  function HouseholdsView() {
+    return (
+      <Box>
+        <Typography variant="h5" className="mb-4">Haushalte</Typography>
+        <List>
+          <ListItem>
+            <ListItemText primary="Haushalt: Mein Haus | Typ: Haus" secondary="2 Personen, 1 Tier" />
+            <IconButton aria-label="Bearbeiten">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0zM19 19l-4-4" />
+              </svg>
+            </IconButton>
+          </ListItem>
+        </List>
+      </Box>
+    );
+  }
+
+  function FinancesView() {
+    return (
+      <Box>
+        <Typography variant="h5" className="mb-4">Finanzen</Typography>
+        <List>
+          <ListItem>
+            <ListItemText primary="Einnahmen | Miete | 1200€ | Haushalt: Mein Haus" secondary="Kategorie: Einkommen" />
+            <IconButton aria-label="Bearbeiten">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0zM19 19l-4-4" />
+              </svg>
+            </IconButton>
+          </ListItem>
+          <ListItem>
+            <ListItemText primary="Ausgaben | Lebensmittel | 300€ | Haushalt: Mein Haus" secondary="Kategorie: Haushalt" />
+            <IconButton aria-label="Bearbeiten">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0zM19 19l-4-4" />
+              </svg>
+            </IconButton>
+          </ListItem>
+        </List>
+        <Button variant="contained" color="primary" className="mt-4">JSON exportieren</Button>
+        <Button variant="outlined" color="primary" className="mt-4 ml-2">JSON importieren</Button>
+      </Box>
+    );
+  }
+
+  function SettingsView() {
+    return (
+      <Box>
+        <Typography variant="h5" className="mb-4">Einstellungen</Typography>
+        <Grid container spacing={2}>
+          <Grid item xs={12}>
+            <TextField label="Design-Modus" defaultValue="Hell" fullWidth variant="outlined" aria-label="Design-Modus auswählen" />
+          </Grid>
+          <Grid item xs={12}>
+            <Select fullWidth variant="outlined" defaultValue="de" aria-label="Sprache auswählen">
+              <MenuItem value="de">Deutsch</MenuItem>
+              <MenuItem value="en">Englisch</MenuItem>
+            </Select>
+          </Grid>
+        </Grid>
+      </Box>
+    );
+  }
+
+  ReactDOM.render(<App />, document.getElementById('root'));
+</script>
+</body>
+</html>

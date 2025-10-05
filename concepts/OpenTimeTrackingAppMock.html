@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Open Time Tracker</title>
+  <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mui/material@5.14.18/umd/material-ui.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.22.9/babel.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/@mui/material@5.14.18/dist/css/mui.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+  const { useState } = React;
+  // Korrigierter Import der MUI-Komponenten
+  const { AppBar, Toolbar, Typography, Button, Container, Grid, TextField, Select, MenuItem, IconButton, List, ListItem, ListItemText, Drawer, Divider, Box, CssBaseline, ThemeProvider, createTheme } = window.MaterialUI;
+
+  const theme = createTheme({
+    palette: {
+      primary: { main: '#1E88E5' }, // Blau für Menüs, Toolbars
+      secondary: { main: '#FBC02D' }, // Gelb als Akzentfarbe
+      background: { default: '#FFFFFF' }, // Weiß als Grundfarbe
+    },
+    components: {
+      MuiButton: {
+        styleOverrides: {
+          root: {
+            textTransform: 'none',
+            borderRadius: '8px',
+          },
+        },
+      },
+    },
+  });
+
+  function App() {
+    const [drawerOpen, setDrawerOpen] = useState(false);
+    const [view, setView] = useState('today'); // today, week, month, manage, settings
+    const [timerRunning, setTimerRunning] = useState(false);
+    const [category, setCategory] = useState('');
+
+    const toggleDrawer = () => {
+      setDrawerOpen(!drawerOpen);
+    };
+
+    const renderContent = () => {
+      switch (view) {
+        case 'today':
+          return <TodayView timerRunning={timerRunning} setTimerRunning={setTimerRunning} category={category} setCategory={setCategory} />;
+        case 'week':
+          return <WeekView />;
+        case 'month':
+          return <MonthView />;
+        case 'manage':
+          return <ManageData />;
+        case 'settings':
+          return <Settings />;
+        default:
+          return <TodayView timerRunning={timerRunning} setTimerRunning={setTimerRunning} category={category} setCategory={setCategory} />;
+      }
+    };
+
+    return (
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <AppBar position="static" color="primary">
+          <Toolbar>
+            <IconButton edge="start" color="inherit" onClick={toggleDrawer} aria-label="menu">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </IconButton>
+            <Typography variant="h6" className="flex-grow">Open Time Tracker</Typography>
+            <Button color="inherit" onClick={() => setView('settings')}>Settings</Button>
+          </Toolbar>
+        </AppBar>
+        <Drawer anchor="left" open={drawerOpen} onClose={toggleDrawer}>
+          <Box className="w-64 p-4 bg-white">
+            <Typography variant="h6" className="mb-4">Menu</Typography>
+            <Divider />
+            <List>
+              <ListItem button onClick={() => { setView('today'); toggleDrawer(); }}>
+                <ListItemText primary="Today" />
+              </ListItem>
+              <ListItem button onClick={() => { setView('week'); toggleDrawer(); }}>
+                <ListItemText primary="Week" />
+              </ListItem>
+              <ListItem button onClick={() => { setView('month'); toggleDrawer(); }}>
+                <ListItemText primary="Month" />
+              </ListItem>
+              <ListItem button onClick={() => { setView('manage'); toggleDrawer(); }}>
+                <ListItemText primary="Manage Data" />
+              </ListItem>
+            </List>
+          </Box>
+        </Drawer>
+        <Container className="mt-4">{renderContent()}</Container>
+      </ThemeProvider>
+    );
+  }
+
+  function TodayView({ timerRunning, setTimerRunning, category, setCategory }) {
+    return (
+      <Box>
+        <Typography variant="h5" className="mb-4">Today</Typography>
+        <Grid container spacing={2} className="mb-4">
+          <Grid item xs={12} sm={6}>
+            <TextField
+              label="Category (required)"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              fullWidth
+              variant="outlined"
+              className="mb-2"
+            />
+            <Select fullWidth variant="outlined" defaultValue="" displayEmpty>
+              <MenuItem value="" disabled>Project (optional)</MenuItem>
+              <MenuItem value="project1">Project 1</MenuItem>
+            </Select>
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <Box className="flex space-x-2">
+              <Button
+                variant="contained"
+                color={timerRunning ? 'secondary' : 'primary'}
+                onClick={() => setTimerRunning(!timerRunning)}
+                disabled={!category}
+              >
+                {timerRunning ? 'Stop (S)' : 'Start (S)'}
+              </Button>
+              <Button
+                variant="outlined"
+                color="primary"
+                disabled={!timerRunning}
+              >
+                Pause (P)
+              </Button>
+            </Box>
+            <Typography className="mt-2">Elapsed: 00:00:00</Typography>
+          </Grid>
+        </Grid>
+        <Button variant="contained" color="primary" className="mb-4">Add Manual Entry (A)</Button>
+        <List>
+          <ListItem>
+            <ListItemText primary="08:00–09:00 | Work | Project X | 1h (raw: 3600s)" secondary="Note: Morning task" />
+            <IconButton aria-label="edit">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0zM19 19l-4-4" />
+              </svg>
+            </IconButton>
+          </ListItem>
+        </List>
+      </Box>
+    );
+  }
+
+  function WeekView() {
+    return (
+      <Box>
+        <Typography variant="h5" className="mb-4">Week</Typography>
+        <List>
+          <ListItem>
+            <ListItemText primary="2025-10-02 | 08:00–09:00 | Work | 1h" />
+          </ListItem>
+        </List>
+      </Box>
+    );
+  }
+
+  function MonthView() {
+    return (
+      <Box>
+        <Typography variant="h5" className="mb-4">Month</Typography>
+        <List>
+          <ListItem>
+            <ListItemText primary="2025-10-01 | 08:00–09:00 | Work | 1h" />
+          </ListItem>
+        </List>
+      </Box>
+    );
+  }
+
+  function ManageData() {
+    return (
+      <Box>
+        <Typography variant="h5" className="mb-4">Manage Data</Typography>
+        <Grid container spacing={2}>
+          <Grid item xs={12} sm={4}>
+            <Typography variant="h6">Categories</Typography>
+            <List>
+              <ListItem>
+                <ListItemText primary="Work (5 entries)" />
+                <IconButton aria-label="delete">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </IconButton>
+              </ListItem>
+            </List>
+          </Grid>
+          <Grid item xs={12} sm={4}>
+            <Typography variant="h6">Projects</Typography>
+            <List>
+              <ListItem>
+                <ListItemText primary="Project X (3 entries)" />
+              </ListItem>
+            </List>
+          </Grid>
+          <Grid item xs={12} sm={4}>
+            <Typography variant="h6">Tags</Typography>
+            <List>
+              <ListItem>
+                <ListItemText primary="Urgent (2 entries)" />
+              </ListItem>
+            </List>
+          </Grid>
+        </Grid>
+        <Button variant="contained" color="primary" className="mt-4">Export CSV</Button>
+        <Button variant="outlined" color="primary" className="mt-4 ml-2">Import CSV</Button>
+      </Box>
+    );
+  }
+
+  function Settings() {
+    return (
+      <Box>
+        <Typography variant="h5" className="mb-4">Settings</Typography>
+        <Grid container spacing={2}>
+          <Grid item xs={12}>
+            <TextField label="Timezone" defaultValue="Europe/Berlin" fullWidth variant="outlined" />
+          </Grid>
+          <Grid item xs={12}>
+            <Select fullWidth variant="outlined" defaultValue="0">
+              <MenuItem value="0">No Rounding</MenuItem>
+              <MenuItem value="5">5 Minutes</MenuItem>
+              <MenuItem value="10">10 Minutes</MenuItem>
+              <MenuItem value="15">15 Minutes</MenuItem>
+              <MenuItem value="30">30 Minutes</MenuItem>
+              <MenuItem value="60">60 Minutes</MenuItem>
+            </Select>
+          </Grid>
+          <Grid item xs={12}>
+            <Select fullWidth variant="outlined" defaultValue="nearest">
+              <MenuItem value="nearest">Round Nearest</MenuItem>
+              <MenuItem value="up">Round Up</MenuItem>
+            </Select>
+          </Grid>
+        </Grid>
+      </Box>
+    );
+  }
+
+  ReactDOM.render(<App />, document.getElementById('root'));
+</script>
+</body>
+</html>
